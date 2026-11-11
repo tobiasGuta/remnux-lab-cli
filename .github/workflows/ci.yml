@@ -32,6 +32,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Test pre-boot XML sanitization without real VMs
+        run: python tests/provisioning_policy.py
       - name: Test channel repair using mock libvirt
         run: python tests/channel_policy.py
       - name: Test device and snapshot isolation using mock libvirt

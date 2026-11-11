@@ -5,7 +5,7 @@ for file in "$ROOT/install.sh" "$ROOT/scripts/setup-remnux-lab.sh" "$ROOT/script
   bash -n "$file"
 done
 "$ROOT/scripts/setup-remnux-lab.sh" --help | grep -q 'storage-dir'
-"$ROOT/scripts/malware-lab.sh" --help | grep -q 'clean-hardened'
+"$ROOT/scripts/malware-lab.sh" --help | grep -q 'clean-spice'
 "$ROOT/scripts/malware-lab.sh" --help | grep -q 'malware-lab.sh doctor'
 "$ROOT/scripts/malware-lab.sh" --help | grep -q 'malware-lab.sh snapshots'
 # A misuse must be rejected without touching any VM.
@@ -20,6 +20,9 @@ fi
 # Protect against scope creeping to guest networking or unrelated domain deletion.
 ! grep -Eq 'virsh_lab (undefine|vol-delete|pool-destroy)' "$ROOT/scripts/malware-lab.sh"
 grep -Fq -- '--network none' "$ROOT/scripts/setup-remnux-lab.sh"
+grep -Fq -- '--graphics spice,listen=127.0.0.1' "$ROOT/scripts/setup-remnux-lab.sh"
+grep -Fq -- '--print-xml --dry-run' "$ROOT/scripts/setup-remnux-lab.sh"
+grep -Fq -- 'sanitize-domain-xml.py' "$ROOT/scripts/setup-remnux-lab.sh"
 grep -Fq -- 'host-guest channel:' "$ROOT/scripts/malware-lab.sh"
 grep -Fq -- 'HARDEN $VM' "$ROOT/scripts/malware-lab.sh"
 printf 'Smoke tests passed. No VM was created or modified.\n'

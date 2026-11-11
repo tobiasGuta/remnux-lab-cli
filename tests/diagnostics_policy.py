@@ -21,14 +21,14 @@ def test():
 
         r = run(env, 'snapshots')
         assert r.returncode == 0, r.stderr
-        assert 'clean-hardened' in r.stdout and 'clean-base' in r.stdout, r.stdout
-        assert 'Verified reset target: clean-hardened' in r.stdout
+        assert 'clean-spice' in r.stdout and 'clean-base' in r.stdout, r.stdout
+        assert 'Verified reset target: clean-spice' in r.stdout
         assert 'NEVER be used by reset' in r.stdout
 
         r = run(env, 'doctor')
         assert 'Diagnostic summary:' in r.stdout, (r.stdout, r.stderr)
         assert '[PASS] Saved VM configuration' in r.stdout, (r.stdout, r.stderr)
-        assert '[PASS] Recovery snapshot clean-hardened' in r.stdout, (r.stdout, r.stderr)
+        assert '[PASS] Recovery snapshot clean-spice' in r.stdout, (r.stdout, r.stderr)
         assert '[PASS] Lab filesystem' in r.stdout or '[WARN] Lab filesystem' in r.stdout
         # /dev/kvm may be absent on CI, which is an expected diagnostic failure.
         assert r.returncode in (0, 1)
@@ -42,7 +42,7 @@ def test():
         r = run(env, 'snapshots')
         assert r.returncode != 0 and 'unexpected device: interface' in r.stderr, r.stderr
         r = run(env, 'doctor')
-        assert r.returncode != 0 and 'Recovery snapshot clean-hardened is unsafe' in r.stdout, (r.stdout, r.stderr)
+        assert r.returncode != 0 and 'Recovery snapshot clean-spice is unsafe' in r.stdout, (r.stdout, r.stderr)
 
         commands = log.read_text().splitlines()
         allowed = {'dominfo', 'dumpxml', 'domstate', 'snapshot-list', 'snapshot-dumpxml'}

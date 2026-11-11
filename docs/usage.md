@@ -12,20 +12,26 @@ If provisioning fails after the download, resolve the error and rerun the same c
 
 ## Initialize baseline
 
-Boot the appliance and inspect the desktop, then shut it down and wait for `shut off`:
+The installer creates a shut-off SPICE/QXL VM and removes generated SPICE agent
+channels and USB redirection from its XML **before** defining the VM. No domain
+is booted automatically. This is intentional: review its offline configuration
+first, and do not launch a guest with unreviewed host integrations.
 
 ```bash
-sudo virsh start remnux-lab
-virt-viewer --connect qemu:///system remnux-lab
-sudo virsh shutdown remnux-lab
-sudo virsh domstate remnux-lab
-# If the VM has a guest-agent channel, install the CLI and run malware-lab.sh harden.
-# Create a clean baseline only after verifying the guest is channel-free.
-sudo virsh snapshot-create-as remnux-lab clean-hardened \
-  --description 'Clean offline hardened REMnux environment'
+bash install.sh
+malware-lab.sh status               # The missing snapshot message is expected
+malware-lab.sh start                # Verify the graphical desktop
+# From the guest when finished: sudo poweroff
+sudo virsh domstate remnux-lab     # Must say: shut off
+sudo virsh snapshot-create-as remnux-lab clean-spice \
+  --description 'Clean offline REMnux with working SPICE/QXL graphics'
+malware-lab.sh status
 ```
 
-Create the baseline **before** introducing suspicious files. A snapshot can only be considered clean if the guest is actually clean when it is taken.
+Create `clean-spice` **before** importing suspicious files and only after verifying
+that the guest is clean, no virtual network/sharing devices are present, and any
+test ISOs have been detached. Never replace or delete legacy snapshots as part
+of this migration.
 
 ## Manage
 
@@ -42,7 +48,7 @@ malware-lab.sh start
 malware-lab.sh reset
 ```
 
-The `import` command requires a shut-off VM and the `clean-hardened` snapshot. The ISO is stored under the VM disk directory in `imports/` and remains after reset. It can be mounted or accessed from the virtual optical drive inside REMnux.
+The `import` command requires a shut-off VM and the `clean-spice` snapshot. The ISO is stored under the VM disk directory in `imports/` and remains after reset. It can be mounted or accessed from the virtual optical drive inside REMnux.
 
 The `reset` command asks you to type `RESET remnux-lab`; it force-stops the VM if it is running, then reverts the snapshot. **Unsaved analysis data in the VM will be lost.** It never deletes the domain itself.
 
@@ -74,12 +80,12 @@ malware-lab.sh status
 
 `harden` only supports a single recognized service channel and requires typed
 confirmation. It saves a backup of the original libvirt XML, modifies only
-`remnux-lab`, and never changes the disk or existing snapshots. The CLI refuses an unsafe, running, or unverifiable saved snapshot and does not fall back to `clean-base`. To migrate from an older install, preserve `clean-base`, ensure the guest is shut off and `status` passes, and create `clean-hardened`. Do not overwrite or delete existing snapshots.
+`remnux-lab`, and never changes the disk or existing snapshots. The CLI refuses an unsafe, running, or unverifiable saved snapshot and does not fall back to `clean-base` or `clean-hardened`. To migrate from an older install, preserve both `clean-base` and `clean-hardened`, ensure the guest is clean and shut off, configure SPICE/QXL with sharing and redirection removed, detach imported media, and create `clean-spice`. Do not overwrite or delete existing snapshots.
 
 ## Read-only troubleshooting
 
-Run `malware-lab.sh doctor` to check KVM availability, optional tools, SELinux status, storage filesystem/free space, the saved/live domain definition, and the `clean-hardened` snapshot. `PASS` means that individual check succeeded; `WARN` means investigate a possible weakness or missing optional component; `FAIL` blocks a passing exit status. The command does not repair the VM or change system services. Note that `doctor` assumes the named VM exists and libvirt is reachable; connection failures require manually checking `sudo virsh -c qemu:///system dominfo remnux-lab`.
+Run `malware-lab.sh doctor` to check KVM availability, optional tools, SELinux status, storage filesystem/free space, the saved/live domain definition, and the `clean-spice` snapshot. `PASS` means that individual check succeeded; `WARN` means investigate a possible weakness or missing optional component; `FAIL` blocks a passing exit status. The command does not repair the VM or change system services. Note that `doctor` assumes the named VM exists and libvirt is reachable; connection failures require manually checking `sudo virsh -c qemu:///system dominfo remnux-lab`.
 
-Use `malware-lab.sh snapshots` to list the snapshots for `remnux-lab` and verify the only approved reset target, `clean-hardened`. It never reverts, creates, or deletes snapshots; an old `clean-base` is listed only for reference.
+Use `malware-lab.sh snapshots` to list the snapshots for `remnux-lab` and verify the only approved reset target, `clean-spice`. It never reverts, creates, or deletes snapshots; an old `clean-base` is listed only for reference.
 
 Use `sudo systemctl status virtstoraged.socket` for a missing storage socket, and inspect SELinux permissions rather than disabling policy.

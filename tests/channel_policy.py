@@ -30,7 +30,7 @@ case "$1" in
   dominfo) echo 'Id: -' ;;
   dumpxml) cat "$MOCK_XML" ;;
   domstate) echo 'shut off' ;;
-  snapshot-list) printf 'clean-base\nclean-hardened\n' ;;
+  snapshot-list) printf 'clean-base\nclean-hardened\nclean-spice\n' ;;
   snapshot-dumpxml) cat "$MOCK_SNAPSHOT_XML" ;;
   domiflist) printf ' Interface   Type   Source   Model   MAC\\n-----\\n' ;;
   domblklist) printf ' Type   Device   Target   Source\\n-----\\n' ;;
@@ -49,16 +49,16 @@ esac
     def write_xml(channel):
         xml.write_text(f'''<domain type="kvm"><name>remnux-lab</name><devices>
 <disk type="file" device="disk"><driver name="qemu" type="qcow2"/><source file="{disk}"/><target dev="sda" bus="scsi"/></disk>
-<graphics type="vnc" listen="127.0.0.1"/>
+<graphics type="spice" listen="127.0.0.1"/><video><model type="qxl"/></video>
 {channel}
 </devices></domain>''')
     def write_snapshot(device='', state='shutoff', domain=True):
         domain_xml = f'''<domain type="kvm"><name>remnux-lab</name><devices>
 <disk type="file" device="disk"><driver name="qemu" type="qcow2"/><source file="{disk}"/><target dev="sda" bus="scsi"/></disk>
-<graphics type="vnc" listen="127.0.0.1"/>
+<graphics type="spice" listen="127.0.0.1"/><video><model type="qxl"/></video>
 {device}
 </devices></domain>''' if domain else ''
-        snapshot.write_text(f'<domainsnapshot><name>clean-hardened</name><state>{state}</state>{domain_xml}</domainsnapshot>')
+        snapshot.write_text(f'<domainsnapshot><name>clean-spice</name><state>{state}</state>{domain_xml}</domainsnapshot>')
 
     write_snapshot()
     return env, write_xml, lab, write_snapshot

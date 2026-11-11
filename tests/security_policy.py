@@ -12,6 +12,7 @@ CASES = {
     'vsock': ('<vsock model="virtio"/>', 'unexpected device: vsock'),
     'agent channel': ('<channel type="unix"><target type="virtio" name="org.qemu.guest_agent.0"/></channel>', 'host-guest channel'),
     'public VNC': ('<graphics type="vnc" listen="0.0.0.0"/>', 'graphics does not listen only on loopback'),
+    'USB redirection': ('<redirdev bus="usb" type="spicevmc"/>', 'unexpected device: redirdev'),
     'extra disk': ('<disk type="file" device="disk"><driver name="qemu" type="qcow2"/><source file="/tmp/external.qcow2"/></disk>', 'unexpected primary disk'),
 }
 
@@ -44,9 +45,19 @@ def snapshots_edge_cases():
             write_snapshot(**kwargs)
             r = run(env, 'reset')
             assert r.returncode != 0 and error in r.stderr, r.stderr
+        write_snapshot('')
+        original = __import__('pathlib').Path(env['MOCK_SNAPSHOT_XML']).read_text()
+        for altered, error in [
+            (original.replace('type="spice"', 'type="vnc"'), 'requires SPICE graphics'),
+            (original.replace('type="qxl"', 'type="vga"'), 'requires QXL video'),
+            (original.replace('<video>', '<disk type="file" device="cdrom"><source file="/tmp/imports/transfer.iso"/><readonly/></disk><video>'), 'must not contain removable media'),
+        ]:
+            __import__('pathlib').Path(env['MOCK_SNAPSHOT_XML']).write_text(altered)
+            r = run(env, 'reset')
+            assert r.returncode != 0 and error in r.stderr, r.stderr
         write_snapshot()
         r = run(env, 'status')
-        assert r.returncode == 0 and 'clean-hardened present' in r.stdout, r.stderr
+        assert r.returncode == 0 and 'clean-spice present' in r.stdout, r.stderr
         r = run(env, 'reset')
         assert r.returncode != 0 and 'interactive terminal' in r.stderr, r.stderr
         return 'snapshot structure, safe status and noninteractive reset'

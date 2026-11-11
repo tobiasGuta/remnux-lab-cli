@@ -55,7 +55,7 @@ df -h "$STORAGE"
 
 # Only install standard Fedora virtualization packages; never alter other VMs.
 sudo dnf install -y virt-install virt-viewer qemu-kvm qemu-img libvirt-daemon-kvm \
-  policycoreutils-python-utils acl wget python3 xorriso
+  policycoreutils-python-utils acl wget python3 xorriso qemu-ui-spice-core qemu-device-display-qxl
 if systemctl list-unit-files virtqemud.socket --no-legend 2>/dev/null | grep -q '^virtqemud.socket'; then
   sudo systemctl enable --now virtqemud.socket virtstoraged.socket
 else
@@ -95,14 +95,25 @@ sudo semanage fcontext -a -t virt_image_t "$LAB(/.*)?" 2>/dev/null || \
   sudo semanage fcontext -m -t virt_image_t "$LAB(/.*)?"
 sudo restorecon -RF "$LAB"
 
-# No NIC, host directories, agent channel, or hardware passthrough is configured.
+# Generate an initial SPICE/QXL domain definition without starting the VM.
+# virt-install may add guest-agent and USB-redirection devices by default;
+# sanitize the candidate XML before `virsh define`, and refuse unknown devices.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+CANDIDATE="$(mktemp --suffix=.xml)"
+HARDENED="$(mktemp --suffix=.xml)"
+trap 'rm -f -- "$CANDIDATE" "$HARDENED"' EXIT
 sudo virt-install --connect "$URI" --name "$VM" --virt-type kvm \
   --memory "$MEMORY" --vcpus "$CPUS" --import --osinfo ubuntu24.04 \
   --controller type=scsi,model=virtio-scsi \
   --disk "path=$DISK,format=qcow2,bus=scsi" \
-  --network none --video vga --graphics vnc,listen=127.0.0.1 --noautoconsole
+  --network none --video qxl --graphics spice,listen=127.0.0.1 \
+  --print-xml --dry-run > "$CANDIDATE"
+python3 "$SCRIPT_DIR/sanitize-domain-xml.py" "$DISK" < "$CANDIDATE" > "$HARDENED" || \
+  fail 'Generated VM configuration failed the offline security checks. Nothing was defined.'
+sudo virsh -c "$URI" define "$HARDENED" || fail 'Could not define the validated offline domain.'
 
-printf '\nCreated %s. Verify isolation with: sudo virsh domiflist %s\n' "$VM" "$VM"
-printf 'Open the display: virt-viewer --connect qemu:///system %s\n' "$VM"
-printf 'Check for auto-added guest channels with malware-lab.sh status; if present, harden before snapshot.\n'
-printf 'After checking the guest, shut down and create snapshot clean-hardened before importing samples.\n'
+printf '\nCreated %s in a shut-off state with SPICE/QXL, no network or host sharing.\n' "$VM"
+printf 'Validate: sudo virsh domiflist %s\n' "$VM"
+printf 'Open the display after starting: virt-viewer --connect qemu:///system %s\n' "$VM"
+printf 'Install CLI: bash install.sh; run: malware-lab.sh doctor\n'
+printf 'After verifying a clean guest, shut down and create a clean-spice snapshot before importing samples.\n'

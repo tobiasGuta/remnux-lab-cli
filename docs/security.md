@@ -5,10 +5,10 @@ This project reduces exposure while investigating potentially malicious files; i
 ## Intended boundaries
 
 - The managed libvirt domain is **exactly** `remnux-lab` on `qemu:///system`.
-- Provisioning uses `--network none` and a VNC listener bound to `127.0.0.1`.
+- Provisioning generates a SPICE/QXL domain with `--network none` and a SPICE listener bound to `127.0.0.1`. It removes recognized auto-generated sharing channels and USB redirection **before** defining or starting the VM.
 - The CLI refuses a domain configuration with virtual network interfaces, host filesystems, passthrough devices, guest agent channels, extra disks, or non-loopback graphical listeners.
 - A sample is moved into a guest only through an ISO9660 file attached as read-only virtual media while the guest is powered off; the host never extracts the sample.
-- The guest is restored to `clean-hardened` after an investigation, only after validating its stored domain configuration.
+- The guest is restored to `clean-spice` after an investigation, only after validating its stored domain configuration, video hardware, and lack of imported removable media.
 - `doctor` and `snapshots` inspect configuration and host prerequisites without calling mutating libvirt operations.
 
 ## Default guest channels and the `harden` repair
@@ -27,7 +27,7 @@ confirmation**. The command does not touch disks or snapshots and saves a copy
 of the previous VM XML in the VM's `config-backups` directory. Unknown or
 multiple channels require manual review; the CLI will not silently allow them.
 
-**Snapshot protections:** Preserve any older `clean-base` snapshot but create `clean-hardened` only after the guest is clean, shut off, and hardened. The CLI verifies the snapshot XML embeds the expected offline VM configuration and will not restore a snapshot with unexpected networking, passthrough, channels, or running state. It never falls back to `clean-base`.
+**Snapshot protections:** Preserve older `clean-base` and `clean-hardened` snapshots but create `clean-spice` only after the guest is clean, shut off, and verified with SPICE/QXL. The CLI validates the snapshot XML for SPICE/QXL, no import CD-ROM, and the expected offline VM configuration; it will not restore a snapshot with unexpected networking, passthrough, channels, USB redirection, or running state. It never falls back to `clean-base` or `clean-hardened`.
 
 ## Limitations
 
@@ -43,7 +43,7 @@ multiple channels require manual review; the CLI will not silently allow them.
 ## Operational guidance
 
 1. Validate downloads and keep the host and hypervisor patched.
-2. Configure analysis tools **before** importing suspicious files; then create the offline `clean-hardened` snapshot.
+2. Configure analysis tools **before** importing suspicious files; then create the offline `clean-spice` snapshot.
 3. Verify `malware-lab.sh status` and check the guest has no network interface.
 4. Import an unmodified sample while the VM is shut down. Inspect it only inside the guest.
 5. Preserve any results outside the VM through a carefully reviewed, separate workflow **before** reset; do not mount your home directory in the guest.
