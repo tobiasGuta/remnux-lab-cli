@@ -102,6 +102,9 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 CANDIDATE="$(mktemp --suffix=.xml)"
 HARDENED="$(mktemp --suffix=.xml)"
 trap 'rm -f -- "$CANDIDATE" "$HARDENED"' EXIT
+# The temporary XML file belongs to the invoking user; only XML generation
+# needs sudo. Shell redirection intentionally writes as the current user.
+# shellcheck disable=SC2024
 sudo virt-install --connect "$URI" --name "$VM" --virt-type kvm \
   --memory "$MEMORY" --vcpus "$CPUS" --import --osinfo ubuntu24.04 \
   --controller type=scsi,model=virtio-scsi \
