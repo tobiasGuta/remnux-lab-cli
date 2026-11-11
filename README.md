@@ -16,7 +16,7 @@ This is **risk reduction, not a guarantee of containment**. VM escapes and host 
 - QEMU/KVM VM with **no virtual NIC**, host shares, or passthrough configured.
 - CLI guardrails checking persistent and live libvirt XML.
 - Offline single-file transfer using read-only ISO media.
-- Typed confirmation before destructive snapshot recovery.
+- Snapshot-aware recovery: validate the saved VM configuration before typed confirmation and revert.
 - Scoped to **one VM named `remnux-lab`**; does not enumerate or change other VMs.
 - No malware samples, VM images, or personal environment paths tracked by Git.
 
@@ -36,15 +36,17 @@ cd remnux-lab-cli
 # Example: /var/lib/libvirt/images
 bash scripts/setup-remnux-lab.sh --storage-dir /var/lib/libvirt/images
 
-# Inspect guest boot; once clean and powered off, make a baseline:
+# Inspect the guest, shut it off, and remove any libvirt-added guest channel:
 virt-viewer --connect qemu:///system remnux-lab
 sudo virsh shutdown remnux-lab
 sudo virsh domstate remnux-lab           # Must say: shut off
-sudo virsh snapshot-create-as remnux-lab clean-base \
-  --description 'Clean offline REMnux environment'
-
-# Install the CLI entry point:
 bash install.sh
+malware-lab.sh status                   # If a channel is flagged, run: malware-lab.sh harden
+# Once the VM is clean, shut off, and channel-free, make a baseline:
+sudo virsh snapshot-create-as remnux-lab clean-hardened \
+  --description 'Clean offline hardened REMnux environment'
+
+# Check the snapshot and the VM definition:
 malware-lab.sh status
 ```
 
@@ -63,13 +65,13 @@ malware-lab.sh harden                      # Remove a recognized guest channel (
 
 `import` creates a read-only ISO from the unmodified input file and attaches it to the powered-off VM. Reboot the guest and access its virtual CD-ROM. Do not enable shared folders or guest networking to transfer samples.
 
-`reset` **discards guest changes** made since `clean-base`, including analysis results saved only in the guest. It does not delete other VMs or remove host-side imported files.
+`reset` validates and restores only the offline `clean-hardened` snapshot; it **discards guest changes** made since that snapshot, including analysis results saved only in the guest. It does not delete other VMs or remove host-side imported files.
 
 If `status` reports `host-guest channel`, your hypervisor added a guest-service
 channel despite the offline VM configuration. With REMnux shut down, run
 `malware-lab.sh harden` to review and remove a **single recognized** service
 channel. It requires confirmation and does not touch disks, snapshots, or other
-VMs. Existing snapshots can restore the channel; rerun `status` afterward.
+VMs. Create a new `clean-hardened` snapshot after removing the channel. The CLI refuses to restore unsafe or unverifiable snapshot configurations and never falls back to `clean-base`.
 
 ## Documentation
 

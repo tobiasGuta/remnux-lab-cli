@@ -8,7 +8,7 @@ This project reduces exposure while investigating potentially malicious files; i
 - Provisioning uses `--network none` and a VNC listener bound to `127.0.0.1`.
 - The CLI refuses a domain configuration with virtual network interfaces, host filesystems, passthrough devices, guest agent channels, extra disks, or non-loopback graphical listeners.
 - A sample is moved into a guest only through an ISO9660 file attached as read-only virtual media while the guest is powered off; the host never extracts the sample.
-- The guest is restored to `clean-base` after an investigation.
+- The guest is restored to `clean-hardened` after an investigation, only after validating its stored domain configuration.
 
 ## Default guest channels and the `harden` repair
 
@@ -26,9 +26,7 @@ confirmation**. The command does not touch disks or snapshots and saves a copy
 of the previous VM XML in the VM's `config-backups` directory. Unknown or
 multiple channels require manual review; the CLI will not silently allow them.
 
-**Snapshot caveat:** An existing `clean-base` snapshot might contain the older
-configuration with the channel. A future `reset` can reintroduce it; run
-`malware-lab.sh status` and, if needed, `harden` again before starting the VM.
+**Snapshot protections:** Preserve any older `clean-base` snapshot but create `clean-hardened` only after the guest is clean, shut off, and hardened. The CLI verifies the snapshot XML embeds the expected offline VM configuration and will not restore a snapshot with unexpected networking, passthrough, channels, or running state. It never falls back to `clean-base`.
 
 ## Limitations
 
@@ -44,7 +42,7 @@ configuration with the channel. A future `reset` can reintroduce it; run
 ## Operational guidance
 
 1. Validate downloads and keep the host and hypervisor patched.
-2. Configure analysis tools **before** importing suspicious files; then create the offline `clean-base` snapshot.
+2. Configure analysis tools **before** importing suspicious files; then create the offline `clean-hardened` snapshot.
 3. Verify `malware-lab.sh status` and check the guest has no network interface.
 4. Import an unmodified sample while the VM is shut down. Inspect it only inside the guest.
 5. Preserve any results outside the VM through a carefully reviewed, separate workflow **before** reset; do not mount your home directory in the guest.

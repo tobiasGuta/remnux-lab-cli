@@ -19,8 +19,10 @@ sudo virsh start remnux-lab
 virt-viewer --connect qemu:///system remnux-lab
 sudo virsh shutdown remnux-lab
 sudo virsh domstate remnux-lab
-sudo virsh snapshot-create-as remnux-lab clean-base \
-  --description 'Clean offline REMnux environment'
+# If the VM has a guest-agent channel, install the CLI and run malware-lab.sh harden.
+# Create a clean baseline only after verifying the guest is channel-free.
+sudo virsh snapshot-create-as remnux-lab clean-hardened \
+  --description 'Clean offline hardened REMnux environment'
 ```
 
 Create the baseline **before** introducing suspicious files. A snapshot can only be considered clean if the guest is actually clean when it is taken.
@@ -38,7 +40,7 @@ malware-lab.sh start
 malware-lab.sh reset
 ```
 
-The `import` command requires a shut-off VM and the `clean-base` snapshot. The ISO is stored under the VM disk directory in `imports/` and remains after reset. It can be mounted or accessed from the virtual optical drive inside REMnux.
+The `import` command requires a shut-off VM and the `clean-hardened` snapshot. The ISO is stored under the VM disk directory in `imports/` and remains after reset. It can be mounted or accessed from the virtual optical drive inside REMnux.
 
 The `reset` command asks you to type `RESET remnux-lab`; it force-stops the VM if it is running, then reverts the snapshot. **Unsaved analysis data in the VM will be lost.** It never deletes the domain itself.
 
@@ -70,5 +72,4 @@ malware-lab.sh status
 
 `harden` only supports a single recognized service channel and requires typed
 confirmation. It saves a backup of the original libvirt XML, modifies only
-`remnux-lab`, and never changes the disk or existing snapshots. An old snapshot
-may restore the channel on reset; repeat `harden` if necessary.
+`remnux-lab`, and never changes the disk or existing snapshots. The CLI refuses an unsafe, running, or unverifiable saved snapshot and does not fall back to `clean-base`. To migrate from an older install, preserve `clean-base`, ensure the guest is shut off and `status` passes, and create `clean-hardened`. Do not overwrite or delete existing snapshots.

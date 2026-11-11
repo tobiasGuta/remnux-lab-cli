@@ -5,7 +5,7 @@ for file in "$ROOT/install.sh" "$ROOT/scripts/setup-remnux-lab.sh" "$ROOT/script
   bash -n "$file"
 done
 "$ROOT/scripts/setup-remnux-lab.sh" --help | grep -q 'storage-dir'
-"$ROOT/scripts/malware-lab.sh" --help | grep -q 'clean-base'
+"$ROOT/scripts/malware-lab.sh" --help | grep -q 'clean-hardened'
 # A misuse must be rejected without touching any VM.
 if "$ROOT/scripts/malware-lab.sh" no-such-command >/dev/null 2>&1; then
   echo 'Unknown subcommand should fail' >&2

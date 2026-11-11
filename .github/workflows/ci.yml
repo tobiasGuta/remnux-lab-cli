@@ -15,5 +15,7 @@ jobs:
         run: bash tests/smoke.sh
       - name: Test libvirt channel policy without real VMs
         run: python3 tests/channel_policy.py
+      - name: Test unsafe device and snapshot rejection without real VMs
+        run: python3 tests/security_policy.py
       - name: ShellCheck
         run: shellcheck -S warning install.sh scripts/*.sh tests/*.sh

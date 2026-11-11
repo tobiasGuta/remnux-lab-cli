@@ -30,7 +30,8 @@ case "$1" in
   dominfo) echo 'Id: -' ;;
   dumpxml) cat "$MOCK_XML" ;;
   domstate) echo 'shut off' ;;
-  snapshot-list) echo 'clean-base' ;;
+  snapshot-list) printf 'clean-base\nclean-hardened\n' ;;
+  snapshot-dumpxml) cat "$MOCK_SNAPSHOT_XML" ;;
   domiflist) printf ' Interface   Type   Source   Model   MAC\\n-----\\n' ;;
   domblklist) printf ' Type   Device   Target   Source\\n-----\\n' ;;
   detach-device)
@@ -42,7 +43,8 @@ esac
 ''')
     virsh.chmod(0o755)
     xml = base / 'domain.xml'
-    env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ['PATH'], MOCK_XML=str(xml))
+    snapshot = base / 'snapshot.xml'
+    env = dict(os.environ, PATH=str(bin_dir) + os.pathsep + os.environ['PATH'], MOCK_XML=str(xml), MOCK_SNAPSHOT_XML=str(snapshot))
 
     def write_xml(channel):
         xml.write_text(f'''<domain type="kvm"><name>remnux-lab</name><devices>
@@ -50,18 +52,27 @@ esac
 <graphics type="vnc" listen="127.0.0.1"/>
 {channel}
 </devices></domain>''')
-    return env, write_xml, lab
+    def write_snapshot(device='', state='shutoff', domain=True):
+        domain_xml = f'''<domain type="kvm"><name>remnux-lab</name><devices>
+<disk type="file" device="disk"><driver name="qemu" type="qcow2"/><source file="{disk}"/><target dev="sda" bus="scsi"/></disk>
+<graphics type="vnc" listen="127.0.0.1"/>
+{device}
+</devices></domain>''' if domain else ''
+        snapshot.write_text(f'<domainsnapshot><name>clean-hardened</name><state>{state}</state>{domain_xml}</domainsnapshot>')
+
+    write_snapshot()
+    return env, write_xml, lab, write_snapshot
 
 
 def run(env, action):
-    return subprocess.run(['bash', str(SCRIPT), action], env=env, capture_output=True, text=True, timeout=15)
+    return subprocess.run(['bash', str(SCRIPT), action], env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=15)
 
 
 def test():
     agent = '<channel type="unix"><target type="virtio" name="org.qemu.guest_agent.0"/></channel>'
     unusual = '<channel type="tcp"><target type="virtio" name="unknown-channel"/></channel>'
     with tempfile.TemporaryDirectory() as base:
-        env, write_xml, lab = fake_lab(base)
+        env, write_xml, lab, write_snapshot = fake_lab(base)
         write_xml(agent)
         r = run(env, 'status')
         assert r.returncode != 0 and 'host-guest channel: type=unix target=org.qemu.guest_agent.0' in r.stderr, r.stderr
