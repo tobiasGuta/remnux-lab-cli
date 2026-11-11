@@ -1,0 +1,17 @@
+name: Bash checks
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Check Bash syntax and CLI behavior
+        run: bash tests/smoke.sh
+      - name: ShellCheck
+        run: shellcheck -S warning install.sh scripts/*.sh tests/*.sh
