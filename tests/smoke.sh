@@ -18,4 +18,6 @@ fi
 # Protect against scope creeping to guest networking or unrelated domain deletion.
 ! grep -Eq 'virsh_lab (undefine|vol-delete|pool-destroy)' "$ROOT/scripts/malware-lab.sh"
 grep -Fq -- '--network none' "$ROOT/scripts/setup-remnux-lab.sh"
+grep -Fq -- 'host-guest channel:' "$ROOT/scripts/malware-lab.sh"
+grep -Fq -- 'HARDEN $VM' "$ROOT/scripts/malware-lab.sh"
 printf 'Smoke tests passed. No VM was created or modified.\n'

@@ -58,11 +58,18 @@ malware-lab.sh start --no-viewer           # Boot without opening viewer
 malware-lab.sh status                      # Inspect offline status, devices, snapshot
 malware-lab.sh import /path/to/sample.zip  # VM must be shut off; no host extraction
 malware-lab.sh reset                       # Typed confirmation required
+malware-lab.sh harden                      # Remove a recognized guest channel (confirmed)
 ```
 
 `import` creates a read-only ISO from the unmodified input file and attaches it to the powered-off VM. Reboot the guest and access its virtual CD-ROM. Do not enable shared folders or guest networking to transfer samples.
 
 `reset` **discards guest changes** made since `clean-base`, including analysis results saved only in the guest. It does not delete other VMs or remove host-side imported files.
+
+If `status` reports `host-guest channel`, your hypervisor added a guest-service
+channel despite the offline VM configuration. With REMnux shut down, run
+`malware-lab.sh harden` to review and remove a **single recognized** service
+channel. It requires confirmation and does not touch disks, snapshots, or other
+VMs. Existing snapshots can restore the channel; rerun `status` afterward.
 
 ## Documentation
 

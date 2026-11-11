@@ -104,4 +104,5 @@ sudo virt-install --connect "$URI" --name "$VM" --virt-type kvm \
 
 printf '\nCreated %s. Verify isolation with: sudo virsh domiflist %s\n' "$VM" "$VM"
 printf 'Open the display: virt-viewer --connect qemu:///system %s\n' "$VM"
+printf 'Check for auto-added guest channels with malware-lab.sh status; if present, harden before snapshot.\n'
 printf 'After checking the guest, shut down and create snapshot clean-base before importing samples.\n'

@@ -13,5 +13,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Check Bash syntax and CLI behavior
         run: bash tests/smoke.sh
+      - name: Test libvirt channel policy without real VMs
+        run: python3 tests/channel_policy.py
       - name: ShellCheck
         run: shellcheck -S warning install.sh scripts/*.sh tests/*.sh

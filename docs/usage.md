@@ -56,3 +56,19 @@ sudo virsh -c qemu:///system pool-list --all
 **Safety checks fail:** Examine `sudo virsh dumpxml remnux-lab` and `sudo virsh dumpxml --inactive remnux-lab`. Remove unsafe devices only after examining their purpose; the CLI will not silently repair configuration changes.
 
 **Need a different storage location:** The CLI discovers the disk from the existing VM definition. The provisioning script's `--storage-dir` must point to your chosen existing directory and is intended for *initial creation only*.
+
+## If `status` reports a host-guest channel
+
+Some libvirt configurations insert a guest agent or display-agent channel even
+when no network interface exists. Do **not** disable the safety check. With the
+VM shut down, run:
+
+```bash
+malware-lab.sh harden
+malware-lab.sh status
+```
+
+`harden` only supports a single recognized service channel and requires typed
+confirmation. It saves a backup of the original libvirt XML, modifies only
+`remnux-lab`, and never changes the disk or existing snapshots. An old snapshot
+may restore the channel on reset; repeat `harden` if necessary.

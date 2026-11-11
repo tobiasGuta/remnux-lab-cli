@@ -10,6 +10,26 @@ This project reduces exposure while investigating potentially malicious files; i
 - A sample is moved into a guest only through an ISO9660 file attached as read-only virtual media while the guest is powered off; the host never extracts the sample.
 - The guest is restored to `clean-base` after an investigation.
 
+## Default guest channels and the `harden` repair
+
+Some versions of virt-install/libvirt provision a host-guest communication channel
+in otherwise offline domains. The CLI intentionally treats a channel as a failed
+isolation check, even when there is no virtual NIC. To inspect what is present:
+
+```bash
+sudo virsh dumpxml --inactive remnux-lab | grep -A8 -B2 '<channel'
+```
+
+If the VM is shut off and the only channel is a recognized QEMU guest-agent or
+SPICE/vdagent channel, `malware-lab.sh harden` can remove it **after an interactive
+confirmation**. The command does not touch disks or snapshots and saves a copy
+of the previous VM XML in the VM's `config-backups` directory. Unknown or
+multiple channels require manual review; the CLI will not silently allow them.
+
+**Snapshot caveat:** An existing `clean-base` snapshot might contain the older
+configuration with the channel. A future `reset` can reintroduce it; run
+`malware-lab.sh status` and, if needed, `harden` again before starting the VM.
+
 ## Limitations
 
 - A hypervisor or kernel vulnerability may allow escape. Use a **physically separate, network-isolated machine** for samples that require high assurance.
