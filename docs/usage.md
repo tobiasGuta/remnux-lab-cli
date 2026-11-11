@@ -35,6 +35,8 @@ of this migration.
 
 ## Manage
 
+For every command's syntax, prerequisites, example output, effects on the VM, and common errors, see the [complete CLI reference](cli-reference.md).
+
 Install the CLI with `bash install.sh`, then:
 
 ```bash

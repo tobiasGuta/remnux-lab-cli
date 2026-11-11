@@ -79,6 +79,8 @@ channel despite the offline VM configuration. With REMnux shut down, run
 channel. It requires confirmation and does not touch disks, snapshots, or other
 VMs. Create a new `clean-spice` snapshot only after the channel and USB redirection are absent and the SPICE/QXL desktop works. The CLI rejects unsafe snapshot configurations and never falls back to older `clean-base` or `clean-hardened` snapshots.
 
+For command prerequisites, effects, expected output, and troubleshooting, see the [complete CLI reference](docs/cli-reference.md).
+
 ## Tests
 
 Run the non-destructive local regression suite:
@@ -94,6 +96,7 @@ CI checks Bash 5.1 and 5.2 and runs the mocked libvirt tests against Python 3.11
 
 ## Documentation
 
+- [Complete CLI reference](docs/cli-reference.md) — every command, examples, output, and errors
 - [Usage and recovery](docs/usage.md)
 - [Security model and limitations](docs/security.md)
 - [Official REMnux appliance documentation](https://docs.remnux.org/install-distro/get-virtual-appliance)
