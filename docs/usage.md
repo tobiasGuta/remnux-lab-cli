@@ -33,6 +33,8 @@ Install the CLI with `bash install.sh`, then:
 
 ```bash
 malware-lab.sh status
+malware-lab.sh doctor       # Read-only diagnostic report
+malware-lab.sh snapshots    # Read-only snapshot inventory
 malware-lab.sh start
 sudo virsh shutdown remnux-lab
 malware-lab.sh import /absolute/path/to/sample.zip
@@ -73,3 +75,11 @@ malware-lab.sh status
 `harden` only supports a single recognized service channel and requires typed
 confirmation. It saves a backup of the original libvirt XML, modifies only
 `remnux-lab`, and never changes the disk or existing snapshots. The CLI refuses an unsafe, running, or unverifiable saved snapshot and does not fall back to `clean-base`. To migrate from an older install, preserve `clean-base`, ensure the guest is shut off and `status` passes, and create `clean-hardened`. Do not overwrite or delete existing snapshots.
+
+## Read-only troubleshooting
+
+Run `malware-lab.sh doctor` to check KVM availability, optional tools, SELinux status, storage filesystem/free space, the saved/live domain definition, and the `clean-hardened` snapshot. `PASS` means that individual check succeeded; `WARN` means investigate a possible weakness or missing optional component; `FAIL` blocks a passing exit status. The command does not repair the VM or change system services. Note that `doctor` assumes the named VM exists and libvirt is reachable; connection failures require manually checking `sudo virsh -c qemu:///system dominfo remnux-lab`.
+
+Use `malware-lab.sh snapshots` to list the snapshots for `remnux-lab` and verify the only approved reset target, `clean-hardened`. It never reverts, creates, or deletes snapshots; an old `clean-base` is listed only for reference.
+
+Use `sudo systemctl status virtstoraged.socket` for a missing storage socket, and inspect SELinux permissions rather than disabling policy.

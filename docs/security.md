@@ -9,6 +9,7 @@ This project reduces exposure while investigating potentially malicious files; i
 - The CLI refuses a domain configuration with virtual network interfaces, host filesystems, passthrough devices, guest agent channels, extra disks, or non-loopback graphical listeners.
 - A sample is moved into a guest only through an ISO9660 file attached as read-only virtual media while the guest is powered off; the host never extracts the sample.
 - The guest is restored to `clean-hardened` after an investigation, only after validating its stored domain configuration.
+- `doctor` and `snapshots` inspect configuration and host prerequisites without calling mutating libvirt operations.
 
 ## Default guest channels and the `harden` repair
 

@@ -54,7 +54,7 @@ def snapshots_edge_cases():
 
 def test():
     tasks = [(name, xml, reason, source) for name, (xml, reason) in CASES.items() for source in ('persistent', 'snapshot')]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(trial, tasks))
         results.append(snapshots_edge_cases())
     print(f'Security policy: {len(results)} mock scenarios passed; no real VMs touched.')

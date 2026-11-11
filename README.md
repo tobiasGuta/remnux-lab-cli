@@ -17,6 +17,7 @@ This is **risk reduction, not a guarantee of containment**. VM escapes and host 
 - CLI guardrails checking persistent and live libvirt XML.
 - Offline single-file transfer using read-only ISO media.
 - Snapshot-aware recovery: validate the saved VM configuration before typed confirmation and revert.
+- Read-only `doctor` diagnostics and `snapshots` recovery inventory.
 - Scoped to **one VM named `remnux-lab`**; does not enumerate or change other VMs.
 - No malware samples, VM images, or personal environment paths tracked by Git.
 
@@ -58,10 +59,14 @@ If you already have a working `remnux-lab` VM, **skip the provisioning script**.
 malware-lab.sh start                       # Boot with safety checks; open viewer
 malware-lab.sh start --no-viewer           # Boot without opening viewer
 malware-lab.sh status                      # Inspect offline status, devices, snapshot
+malware-lab.sh doctor                      # Read-only host, storage and isolation diagnostics
+malware-lab.sh snapshots                   # Read-only snapshot inventory and baseline validation
 malware-lab.sh import /path/to/sample.zip  # VM must be shut off; no host extraction
 malware-lab.sh reset                       # Typed confirmation required
 malware-lab.sh harden                      # Remove a recognized guest channel (confirmed)
 ```
+
+`doctor` and `snapshots` are strictly read-only. A failed diagnostic exits nonzero; warnings identify weaker settings or missing optional tools. Neither command modifies the VM or its snapshots.
 
 `import` creates a read-only ISO from the unmodified input file and attaches it to the powered-off VM. Reboot the guest and access its virtual CD-ROM. Do not enable shared folders or guest networking to transfer samples.
 
@@ -72,6 +77,19 @@ channel despite the offline VM configuration. With REMnux shut down, run
 `malware-lab.sh harden` to review and remove a **single recognized** service
 channel. It requires confirmation and does not touch disks, snapshots, or other
 VMs. Create a new `clean-hardened` snapshot after removing the channel. The CLI refuses to restore unsafe or unverifiable snapshot configurations and never falls back to `clean-base`.
+
+## Tests
+
+Run the non-destructive local regression suite:
+
+```bash
+bash tests/smoke.sh
+python3 tests/channel_policy.py
+python3 tests/security_policy.py
+python3 tests/diagnostics_policy.py
+```
+
+CI checks Bash 5.1 and 5.2 and runs the mocked libvirt tests against Python 3.11 and 3.13. No real VM is created in CI.
 
 ## Documentation
 

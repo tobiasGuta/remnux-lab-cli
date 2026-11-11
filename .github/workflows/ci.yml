@@ -1,4 +1,4 @@
-name: Bash checks
+name: Bash and Python checks
 on:
   push:
   pull_request:
@@ -6,16 +6,35 @@ permissions:
   contents: read
 jobs:
   shell:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04] # Bash 5.1 and 5.2 respectively
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Verify Bash version
+        run: bash --version | head -n 1
       - name: Install ShellCheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Check Bash syntax and CLI behavior
         run: bash tests/smoke.sh
-      - name: Test libvirt channel policy without real VMs
-        run: python3 tests/channel_policy.py
-      - name: Test unsafe device and snapshot rejection without real VMs
-        run: python3 tests/security_policy.py
       - name: ShellCheck
         run: shellcheck -S warning install.sh scripts/*.sh tests/*.sh
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Test channel repair using mock libvirt
+        run: python tests/channel_policy.py
+      - name: Test device and snapshot isolation using mock libvirt
+        run: python tests/security_policy.py
+      - name: Test read-only doctor and snapshots using mock libvirt
+        run: python tests/diagnostics_policy.py

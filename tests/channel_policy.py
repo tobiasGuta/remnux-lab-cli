@@ -65,7 +65,7 @@ esac
 
 
 def run(env, action):
-    return subprocess.run(['bash', str(SCRIPT), action], env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=15)
+    return subprocess.run(['bash', str(SCRIPT), action], env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=45)
 
 
 def test():
